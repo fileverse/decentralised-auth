@@ -5,7 +5,6 @@ async function deployContract() {
   const Credentials = await hre.ethers.getContractFactory("Credentials");
   const credentials = await Credentials.deploy();
   await credentials.deployed();
-  console.log(`Contract deployed to ${credentials.address}`);
   return credentials;
 }
 
@@ -35,7 +34,6 @@ async function generateClientToken({ contractAddress, clientKeyPair, serviceDID 
     }],
   });
   const token = ucans.encode(ucan); // base64 jwt-formatted auth token
-  console.log('token: ', token);
   return token;
 }
 
@@ -67,28 +65,70 @@ async function verifyClientToken({ clientDid, serviceDID, contractAddress, token
 }
 
 async function main() {
+  console.log('-----------------------START----------------------------', '\n\n');  
+  console.log('---------------------------------------------------------', '\n\n');  
+  console.log('>>>> Server side setup of UCANs: START', '\n');
+  // Setup Steps - START
   const crendentialsInstance = await deployContract();
   const contractAddress = crendentialsInstance.address;
-  // generated on service - one time setup
+  console.log('Deployed Repository Smart Contract at: ', contractAddress, '\n');
+
   const serviceKeyPair = await generateServiceKeyPair();
   const serviceDID = await serviceKeyPair.did();
-  // generated on frontend
-  const clientKeyPair = await generateClientKeyPair();
+  console.log('Generated Server identity using the ucans: ', serviceDID, '\n');
+
+  console.log('>>>> Server side setup of UCANs: END', '\n');
+  // Setup Steps - DONE
+  console.log('---------------------------------------------------------', '\n\n');  
+
+  // Setup Step on Client Side - START
+  console.log('>>>> Client side setup of UCANs: START', '\n');  
   const signer = await getRandomSigner();
-  await setClientCredentialsToSmartContract({ contract: crendentialsInstance, did: clientKeyPair.did(), signer });
+  console.log('User\'s Wallet Address (can be any type of wallet - multisigs / smart wallets): ', signer.address, '\n');
+
+  console.log('Generating client identity for the user!', '\n');
+  const clientKeyPair = await generateClientKeyPair();
+  const clientDID = await clientKeyPair.did();
+  console.log('Generated client identity using the ucans: ', clientDID, '\n');
+
+  console.log('Setting clientDID to the smart contract for the user!', '\n');
+  await setClientCredentialsToSmartContract({ contract: crendentialsInstance, did: clientDID, signer });
+  console.log('Set clientDID to the smart contract for the user!', '\n');
+  console.log('>>>> Client side setup of UCANs: END', '\n');
+  // Setup Step on Client Side - END
+  console.log('---------------------------------------------------------', '\n\n');  
+
+  // Generation Step on Client Side - START
+  console.log('>>>> Client side generation of UCANs: START', '\n');
+  console.log('Generating a valid token for the user to interact with backend!', '\n');
   const clientToken = await generateClientToken({
     clientKeyPair,
-    serviceDID: serviceDID,
+    serviceDID,
     contractAddress,
   });
+  console.log('Token Generated: ', clientToken, '\n');
+  console.log('>>>> Client side generation of UCANs: END', '\n');
+  // Generation Step on Client Side - END
+
+  console.log('---------------------------------------------------------', '\n\n');  
+
+  console.log('>>>> Server side verification of UCANs: START', '\n');
+
+  console.log('Getting clientDID from the smart contract for the user address!', '\n');
   const clientDid = await getClientDid({ contract: crendentialsInstance, signerAddress: signer.address });
+  console.log('Got clientDID from the smart contract for the user address: ', clientDid, '\n');
+
+  console.log('Verifying Client Token for the user address!', '\n');
   const isValid = await verifyClientToken({
     contractAddress,
     token: clientToken,
     serviceDID: serviceDID,
     clientDid,
   });
-  console.log(isValid);
+  console.log('Verified Client Token for the user address with status: ', isValid ? 'Valid': 'InValid', '\n');
+  console.log('>>>> Server side verification of UCANs: END', '\n');
+  console.log('---------------------------------------------------------', '\n\n');  
+  console.log('-----------------------END----------------------------', '\n\n');  
 }
 
 // We recommend this pattern to be able to use async/await everywhere
@@ -97,3 +137,9 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+
+// Add a sequence diagram with flow details
+// Why is there a user wallet - not clear in the flow 
+// What is there server setup - not clear in the flow 
+ 
