@@ -8,20 +8,20 @@ Steps to replicate:
 2. Change directory to sc/ by doing 
 
 ```closure 
-$ cd sc/
+cd sc/
 ```
 
 3. Install the deps:
 
 ```closure 
-$ npm install 
+npm install 
 ```
 4. Run the hardhat node in the same directory:
 ```closure
-$ npx hardhat node
+npx hardhat node
 ```
 
 5. Run the workshop script:
 ```closure
-$ npx hardhat run scripts/workshop.js --network localhost
+npx hardhat run scripts/workshop.js --network localhost
 ```
